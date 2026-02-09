@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Digit Game</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .container {
+        background: #fff;
+        padding: 20px 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        text-align: center;
+      }
+      h1 {
+        margin-bottom: 10px;
+      }
+      button {
+        margin: 5px;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        background: #4caf50;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      input {
+        padding: 8px;
+        width: 80%;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 5px;
+        text-align: center;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      #debugNumber {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Order Digit</h1>
+      <div id="modeSelection">
+        <p>Choose game mode:</p>
+        <button onclick="startGame('single')">Single Player</button>
+        <button onclick="startGame('multi')">Multiplayer</button>
+      </div>
+
+      <div id="gameArea" style="display: none">
+        <p id="instructions"></p>
+        <p id="debugNumber"></p>
+        <input type="text" id="guessInput" placeholder="Enter 4-digit number" />
+        <button onclick="makeGuess()">Guess</button>
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Guess</th>
+              <th>Orders</th>
+              <th>Digits</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      let mode;
+      let player1Number = "";
+      let player2Number = "";
+      let currentPlayer = 1;
+
+      function startGame(selectedMode) {
+        mode = selectedMode;
+        document.getElementById("modeSelection").style.display = "none";
+        document.getElementById("gameArea").style.display = "block";
+
+        if (mode === "single") {
+          player2Number = generateRandomNumber();
+          document.getElementById("instructions").innerText =
+            "Guess the computer's number!";
+
+          // DEBUG: show computer number for testing
+          document.getElementById("debugNumber").innerText =
+            "DEBUG – Computer Number: " + player2Number;
+        } else {
+          document.getElementById("debugNumber").innerText = "";
+          player1Number = prompt(
+            "Player 1: Enter your hidden 4-digit number (no repeats, cannot start with 0)",
+          );
+          while (!validateNumber(player1Number)) {
+            player1Number = prompt("Invalid! Enter a valid 4-digit number:");
+          }
+          player2Number = prompt(
+            "Player 2: Enter your hidden 4-digit number (no repeats, cannot start with 0)",
+          );
+          while (!validateNumber(player2Number)) {
+            player2Number = prompt("Invalid! Enter a valid 4-digit number:");
+          }
+          document.getElementById("instructions").innerText =
+            "Player 1 starts guessing!";
+          updateInputState();
+        }
+      }
+
+      function validateNumber(num) {
+        return /^\d{4}$/.test(num) && new Set(num).size === 4 && num[0] !== "0";
+      }
+
+      function generateRandomNumber() {
+        let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        let number = digits.splice(
+          Math.floor(Math.random() * digits.length),
+          1,
+        )[0];
+        digits.push("0");
+        while (number.length < 4) {
+          let index = Math.floor(Math.random() * digits.length);
+          if (!number.includes(digits[index])) number += digits[index];
+        }
+        return number;
+      }
+
+      // FIXED EVALUATION FUNCTION
+      function evaluateGuess(guess, hidden) {
+        let orders = 0,
+          digits = 0;
+        let guessArr = guess.split("");
+        let hiddenArr = hidden.split("");
+
+        // Track which digits matched
+        let guessMatched = [false, false, false, false];
+        let hiddenMatched = [false, false, false, false];
+
+        // First, count orders
+        for (let i = 0; i < 4; i++) {
+          if (guessArr[i] === hiddenArr[i]) {
+            orders++;
+            guessMatched[i] = true;
+            hiddenMatched[i] = true;
+          }
+        }
+
+        // Then, count digits (correct digit wrong position)
+        for (let i = 0; i < 4; i++) {
+          if (!guessMatched[i]) {
+            for (let j = 0; j < 4; j++) {
+              if (!hiddenMatched[j] && guessArr[i] === hiddenArr[j]) {
+                digits++;
+                hiddenMatched[j] = true;
+                break;
+              }
+            }
+          }
+        }
+
+        return { orders, digits };
+      }
+
+      function makeGuess() {
+        let guess = document.getElementById("guessInput").value;
+        if (!/^\d{4}$/.test(guess)) {
+          alert("Enter a 4-digit number!");
+          return;
+        }
+
+        let hidden =
+          mode === "single"
+            ? player2Number
+            : currentPlayer === 1
+              ? player2Number
+              : player1Number;
+        let result = evaluateGuess(guess, hidden);
+
+        // Add guess to table
+        let logBody = document.getElementById("logBody");
+        let row = document.createElement("tr");
+        row.innerHTML = `<td>${mode === "single" ? "Player" : currentPlayer}</td><td>${guess}</td><td>${result.orders}</td><td>${result.digits}</td>`;
+        logBody.appendChild(row);
+
+        // Check for winner
+        if (result.orders === 4) {
+          alert(
+            `${mode === "single" ? "You" : "Player " + currentPlayer} wins! The number was ${hidden}`,
+          );
+          location.reload();
+          return;
+        }
+
+        // Multiplayer turn change
+        if (mode === "multi") {
+          currentPlayer = currentPlayer === 1 ? 2 : 1;
+          document.getElementById("instructions").innerText =
+            `Player ${currentPlayer}'s turn to guess!`;
+          updateInputState();
+        }
+
+        document.getElementById("guessInput").value = "";
+      }
+
+      function updateInputState() {
+        if (mode === "multi") {
+          document.getElementById("guessInput").disabled = false;
+          document.querySelector("button").disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>
