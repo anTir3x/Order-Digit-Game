@@ -1,12 +1,12 @@
 # 🎯 Order Digit Game
 
-A fun and competitive **two‑player number guessing game** inspired by logic, deduction, and classic code‑breaking mechanics.
+A fun and competitive **two-player number guessing game** inspired by logic, deduction, and classic code-breaking mechanics.
 
 ---
 
 ## 🚀 Game Overview
 
-**Order Digit Game** is a turn‑based guessing game where players try to crack a **hidden 4‑digit number** chosen by their opponent.
+**Order Digit Game** is a turn-based guessing game where players try to crack a **hidden 4-digit number** chosen by their opponent.
 
 Each guess is evaluated with precise feedback to help players narrow down the solution.
 
@@ -17,7 +17,7 @@ Each guess is evaluated with precise feedback to help players narrow down the so
 ## 🧠 Game Concept
 
 * Two players (or Player vs Computer)
-* Each player selects a **hidden 4‑digit number**
+* Each player selects a **hidden 4-digit number**
 * Numbers must follow these rules:
 
   * ❌ Cannot start with `0`
@@ -28,10 +28,10 @@ Each guess is evaluated with precise feedback to help players narrow down the so
 
 ## 🎮 Game Modes
 
-### 🧍 Single‑Player
+### 🧍 Single-Player
 
 * Player vs Computer
-* Computer generates a valid random 4‑digit number
+* Computer generates a valid random 4-digit number
 
 ### 👥 Multiplayer
 
@@ -52,16 +52,18 @@ Each guess is evaluated with precise feedback to help players narrow down the so
 Each guess returns two values:
 
 * **Orders** → Digits that are correct **and** in the correct position
-* **Digits** → Digits that are correct but in the **wrong position**
+* **Digits** → Total number of digits from the guess that exist in the hidden number (can include Orders)
 
 📌 **Example:**
 
 ```
 Hidden Number: 4271
 Guess:         4172
-Orders: 1
-Digits: 2
+Orders: 2
+Digits: 4
 ```
+
+> Note: In this game, **Digits can exceed Orders** because we count all correct digits in the hidden number, regardless of their position.
 
 ---
 
@@ -81,7 +83,7 @@ Upon winning:
 
 ### 🔘 Mode Selection
 
-* Single‑player
+* Single-player
 * Multiplayer
 
 ### ✅ Input Validation
@@ -92,7 +94,8 @@ Upon winning:
 
 ### 🧮 Evaluation Logic
 
-* Calculate **Orders** and **Digits** accurately
+* Calculate **Orders** (correct digit, correct position)
+* Calculate **Digits** (total correct digits, including Orders)
 
 ### 🔄 Turn Management
 
@@ -108,7 +111,7 @@ Upon winning:
 | P1     | 1234  | 1      | 2      |
 | P2     | 5678  | 0      | 1      |
 
-### 🤖 Computer Logic (Single‑Player)
+### 🤖 Computer Logic (Single-Player)
 
 * Generate a valid random number
 * Optional: smarter guessing logic (future enhancement)
@@ -118,14 +121,14 @@ Upon winning:
 ## 💡 Future Enhancements (Optional)
 
 * Difficulty levels for AI
-* Timer‑based turns
+* Timer-based turns
 * Hint system
 * Online multiplayer support
-* Mobile‑friendly UI
+* Mobile-friendly UI
 
 ---
 
-## 📌 Tech‑Stack Agnostic
+## 📌 Tech-Stack Agnostic
 
 This game can be implemented using:
 
@@ -139,7 +142,7 @@ This game can be implemented using:
 
 ## 📄 License
 
-Open‑source. Free to modify, learn from, and improve.
+Open-source. Free to modify, learn from, and improve.
 
 ---
 
