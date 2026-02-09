@@ -95,7 +95,7 @@ Upon winning:
 ### 🧮 Evaluation Logic
 
 * Calculate **Orders** (correct digit, correct position)
-* Calculate **Digits** (total correct digits, including Orders)
+* Calculate **Digits** (total correct digits, reguardless of their orders)
 
 ### 🔄 Turn Management
 
