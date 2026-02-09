@@ -1,238 +1,146 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Order Digit Game</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: #f4f4f9;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
+// Order Digit Game
+
+class Player {
+  constructor(name, isComputer = false) {
+    this.name = name;
+    this.isComputer = isComputer;
+    this.hiddenNumber = '';
+    this.guessHistory = [];
+  }
+
+  // Generate a valid 4-digit number for computer
+  generateHiddenNumber() {
+    if (!this.isComputer) return;
+    let digits = [];
+    while (digits.length < 4) {
+      let d = Math.floor(Math.random() * 10);
+      if (digits.length === 0 && d === 0) continue; // no leading 0
+      if (!digits.includes(d)) digits.push(d);
+    }
+    this.hiddenNumber = digits.join('');
+  }
+}
+
+// Validate input
+function isValidNumber(num, allowLeadingZero = false) {
+  if (!/^\d{4}$/.test(num)) return false;
+  if (!allowLeadingZero && num[0] === '0') return false;
+  let digits = new Set(num);
+  return digits.size === 4;
+}
+
+// Evaluate a guess against the hidden number
+function evaluateGuess(hidden, guess) {
+  let orders = 0;
+  let digits = 0;
+  let hiddenArr = hidden.split('');
+  let guessArr = guess.split('');
+
+  // Count Orders
+  for (let i = 0; i < 4; i++) {
+    if (guessArr[i] === hiddenArr[i]) orders++;
+  }
+
+  // Count Digits (correct digits in hidden, including Orders)
+  for (let d of guessArr) {
+    if (hiddenArr.includes(d)) digits++;
+  }
+
+  return { orders, digits };
+}
+
+// Game Class
+class OrderDigitGame {
+  constructor(player1Name, player2Name = '', singlePlayer = false) {
+    this.players = [
+      new Player(player1Name),
+      new Player(singlePlayer ? 'Computer' : player2Name, singlePlayer)
+    ];
+    this.currentTurn = 0;
+    this.singlePlayer = singlePlayer;
+    this.gameOver = false;
+  }
+
+  setHiddenNumbers(p1Number, p2Number = '') {
+    if (!isValidNumber(p1Number)) throw 'Player 1 number invalid';
+    this.players[0].hiddenNumber = p1Number;
+
+    if (this.singlePlayer) {
+      this.players[1].generateHiddenNumber();
+    } else {
+      if (!isValidNumber(p2Number)) throw 'Player 2 number invalid';
+      this.players[1].hiddenNumber = p2Number;
+    }
+  }
+
+  makeGuess(guess) {
+    if (this.gameOver) throw 'Game over';
+    let player = this.players[this.currentTurn];
+    let opponent = this.players[1 - this.currentTurn];
+
+    if (!isValidNumber(guess, true)) throw 'Invalid guess';
+
+    let result = evaluateGuess(opponent.hiddenNumber, guess);
+
+    // Save guess history
+    player.guessHistory.push({
+      guess,
+      orders: result.orders,
+      digits: result.digits
+    });
+
+    // Check win
+    if (result.orders === 4) {
+      this.gameOver = true;
+      return { winner: player.name, result };
+    }
+
+    // Next turn
+    this.currentTurn = 1 - this.currentTurn;
+
+    // If single-player and it's computer's turn, generate auto guess
+    if (this.singlePlayer && this.currentTurn === 1 && !this.gameOver) {
+      let compGuess = this.generateComputerGuess(opponent);
+      return this.makeGuess(compGuess); // recursive call
+    }
+
+    return { winner: null, result };
+  }
+
+  generateComputerGuess(opponent) {
+    // Random valid guess for simplicity
+    let guess = '';
+    let used = new Set();
+    while (guess.length < 4) {
+      let d = Math.floor(Math.random() * 10);
+      if (guess.length === 0 && d === 0) continue; // no leading 0
+      if (!used.has(d)) {
+        guess += d;
+        used.add(d);
       }
-      .container {
-        background: #fff;
-        padding: 20px 30px;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        width: 400px;
-        text-align: center;
+    }
+    return guess;
+  }
+
+  getGuessHistory() {
+    let history = [];
+    for (let p of this.players) {
+      for (let g of p.guessHistory) {
+        history.push({
+          player: p.name,
+          guess: g.guess,
+          orders: g.orders,
+          digits: g.digits
+        });
       }
-      h1 {
-        margin-bottom: 10px;
-      }
-      button {
-        margin: 5px;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        background: #4caf50;
-        color: white;
-        cursor: pointer;
-      }
-      button:hover {
-        background: #45a049;
-      }
-      input {
-        padding: 8px;
-        width: 80%;
-        margin: 10px 0;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        text-align: center;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-      }
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 5px;
-        text-align: center;
-      }
-      th {
-        background-color: #f2f2f2;
-      }
-      #debugNumber {
-        color: red;
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>Order Digit</h1>
-      <div id="modeSelection">
-        <p>Choose game mode:</p>
-        <button onclick="startGame('single')">Single Player</button>
-        <button onclick="startGame('multi')">Multiplayer</button>
-      </div>
+    }
+    return history;
+  }
+}
 
-      <div id="gameArea" style="display: none">
-        <p id="instructions"></p>
-        <p id="debugNumber"></p>
-        <input type="text" id="guessInput" placeholder="Enter 4-digit number" />
-        <button onclick="makeGuess()">Guess</button>
-        <table>
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Guess</th>
-              <th>Orders</th>
-              <th>Digits</th>
-            </tr>
-          </thead>
-          <tbody id="logBody"></tbody>
-        </table>
-      </div>
-    </div>
+// Example usage
+let game = new OrderDigitGame('Alice', '', true); // Single-player
+game.setHiddenNumbers('4271'); // Player 1 number
 
-    <script>
-      let mode;
-      let player1Number = "";
-      let player2Number = "";
-      let currentPlayer = 1;
-
-      function startGame(selectedMode) {
-        mode = selectedMode;
-        document.getElementById("modeSelection").style.display = "none";
-        document.getElementById("gameArea").style.display = "block";
-
-        if (mode === "single") {
-          player2Number = generateRandomNumber();
-          document.getElementById("instructions").innerText =
-            "Guess the computer's number!";
-
-          // DEBUG: show computer number for testing
-          document.getElementById("debugNumber").innerText =
-            "DEBUG – Computer Number: " + player2Number;
-        } else {
-          document.getElementById("debugNumber").innerText = "";
-          player1Number = prompt(
-            "Player 1: Enter your hidden 4-digit number (no repeats, cannot start with 0)",
-          );
-          while (!validateNumber(player1Number)) {
-            player1Number = prompt("Invalid! Enter a valid 4-digit number:");
-          }
-          player2Number = prompt(
-            "Player 2: Enter your hidden 4-digit number (no repeats, cannot start with 0)",
-          );
-          while (!validateNumber(player2Number)) {
-            player2Number = prompt("Invalid! Enter a valid 4-digit number:");
-          }
-          document.getElementById("instructions").innerText =
-            "Player 1 starts guessing!";
-          updateInputState();
-        }
-      }
-
-      function validateNumber(num) {
-        return /^\d{4}$/.test(num) && new Set(num).size === 4 && num[0] !== "0";
-      }
-
-      function generateRandomNumber() {
-        let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-        let number = digits.splice(
-          Math.floor(Math.random() * digits.length),
-          1,
-        )[0];
-        digits.push("0");
-        while (number.length < 4) {
-          let index = Math.floor(Math.random() * digits.length);
-          if (!number.includes(digits[index])) number += digits[index];
-        }
-        return number;
-      }
-
-      // FIXED EVALUATION FUNCTION
-      function evaluateGuess(guess, hidden) {
-        let orders = 0,
-          digits = 0;
-        let guessArr = guess.split("");
-        let hiddenArr = hidden.split("");
-
-        // Track which digits matched
-        let guessMatched = [false, false, false, false];
-        let hiddenMatched = [false, false, false, false];
-
-        // First, count orders
-        for (let i = 0; i < 4; i++) {
-          if (guessArr[i] === hiddenArr[i]) {
-            orders++;
-            guessMatched[i] = true;
-            hiddenMatched[i] = true;
-          }
-        }
-
-        // Then, count digits (correct digit wrong position)
-        for (let i = 0; i < 4; i++) {
-          if (!guessMatched[i]) {
-            for (let j = 0; j < 4; j++) {
-              if (!hiddenMatched[j] && guessArr[i] === hiddenArr[j]) {
-                digits++;
-                hiddenMatched[j] = true;
-                break;
-              }
-            }
-          }
-        }
-
-        return { orders, digits };
-      }
-
-      function makeGuess() {
-        let guess = document.getElementById("guessInput").value;
-        if (!/^\d{4}$/.test(guess)) {
-          alert("Enter a 4-digit number!");
-          return;
-        }
-
-        let hidden =
-          mode === "single"
-            ? player2Number
-            : currentPlayer === 1
-              ? player2Number
-              : player1Number;
-        let result = evaluateGuess(guess, hidden);
-
-        // Add guess to table
-        let logBody = document.getElementById("logBody");
-        let row = document.createElement("tr");
-        row.innerHTML = `<td>${mode === "single" ? "Player" : currentPlayer}</td><td>${guess}</td><td>${result.orders}</td><td>${result.digits}</td>`;
-        logBody.appendChild(row);
-
-        // Check for winner
-        if (result.orders === 4) {
-          alert(
-            `${mode === "single" ? "You" : "Player " + currentPlayer} wins! The number was ${hidden}`,
-          );
-          location.reload();
-          return;
-        }
-
-        // Multiplayer turn change
-        if (mode === "multi") {
-          currentPlayer = currentPlayer === 1 ? 2 : 1;
-          document.getElementById("instructions").innerText =
-            `Player ${currentPlayer}'s turn to guess!`;
-          updateInputState();
-        }
-
-        document.getElementById("guessInput").value = "";
-      }
-
-      function updateInputState() {
-        if (mode === "multi") {
-          document.getElementById("guessInput").disabled = false;
-          document.querySelector("button").disabled = false;
-        }
-      }
-    </script>
-  </body>
-</html>
+console.log(game.makeGuess('4172')); // Guess Player 2 (computer) hidden
+console.log(game.getGuessHistory());
